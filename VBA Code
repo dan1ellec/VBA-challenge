@@ -1,0 +1,210 @@
+Sub StockCounter()
+
+    'Creating variable that allows the code to run through all worksheets. Setting a to be the number of worksheets.
+    Dim a As Integer
+    a = Application.Worksheets.Count
+
+    'Running through all values of w
+    For w = 1 To a
+        Worksheets(w).Activate
+
+        'Creating headings for the summary
+        Cells(1, 9).Value = "Ticker"
+        Cells(1, 10).Value = "Yearly Change"
+        Cells(1, 11).Value = "Percentage Change"
+        Cells(1, 12).Value = "Total Stock Volume"
+
+        'Setting width of columns so results print clearly and numbers are printed the same for formulas
+        Columns("I:L").ColumnWidth = 17
+        Columns("O").ColumnWidth = 19
+        Columns("Q").ColumnWidth = 15
+
+        'Setting a variable to hold the ticker symbol
+        Dim TickerSymbol As String
+    
+        'Setting a variable for the total stock volume
+        Dim TotalStock As Double
+        TotalStock = 0
+    
+        'Creating a variable which sets the location of the results table
+        Dim ResultsRow As Integer
+        ResultsRow = 2
+    
+        'Setting a counter for the last row of the initial data table
+        lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+    
+        'Loop through all the stock information
+        For i = 2 To lastrow
+    
+            'Checking if we are considering the same ticker
+            If Cells(i + 1, 1).Value <> Cells(i, 1).Value Then
+        
+                'Setting the ticker symbol
+                TickerSymbol = Cells(i, 1).Value
+
+                'Adding to the stock volume
+                TotalStock = TotalStock + Cells(i, 7).Value
+
+                'Printing the ticker symbol
+                Range("I" & ResultsRow).Value = TickerSymbol
+        
+                'Printing the stock volume to the summary table
+                Range("L" & ResultsRow).Value = TotalStock
+        
+                'Adding one to the results row
+                ResultsRow = ResultsRow + 1
+        
+                'Resetting the stock volume to zero
+                TotalStock = 0
+        
+            'If it is not the last occurance of a ticker symbol
+            Else
+    
+                'Adding to Stock voume
+                TotalStock = TotalStock + Cells(i, 7).Value
+            
+            End If
+    
+        Next i
+     
+        'Setting variables for yearly and percentage change calculations
+        Dim OpeningPrice As Double
+        Dim ClosingPrice As Double
+        Dim YearlyChange As Double
+        Dim PercentageChange As Double
+        Dim Symbol As String
+
+        'Creating a range for the whole initial stock table
+        Set tablerange = Range("A1:G" & lastrow)
+
+        'Creating a new variable for the rows in the summary table
+        Dim SummaryRow As Integer
+        SummaryRow = 2
+
+        'Looping through the initial stock data to find opening and closing price for each ticker
+        For j = 2 To lastrow
+
+            'Checking we are in the last row before the next symbol starts
+            If Cells(j + 1, 1).Value <> Cells(j, 1).Value Then
+
+                'Setting the closing price
+                ClosingPrice = Cells(j, 6).Value
+         
+                'Setting symbol value by moving through the ticker column in the summary table
+                Symbol = Cells(SummaryRow, 9).Value
+        
+                'Setting a value for opening price
+                OpeningPrice = Application.WorksheetFunction.VLookup(Symbol, tablerange, 3, False)
+         
+                'Calculating yearly change
+                YearlyChange = ClosingPrice - OpeningPrice
+              
+                'calculating percentage change
+                'creating situation for when opening price = 0
+                If OpeningPrice = 0 Then
+                PercentageChange = 0
+             
+                Else
+                PercentageChange = Round((YearlyChange / OpeningPrice) * 100, 2)
+                
+            End If
+        
+            'Printing yearly change
+            Range("J" & SummaryRow).Value = YearlyChange
+          
+            'Setting colour conditionals for Yearly Change
+            If YearlyChange <= 0 Then
+                Range("J" & SummaryRow).Interior.ColorIndex = 3
+          
+            Else
+                Range("J" & SummaryRow).Interior.ColorIndex = 4
+          
+            End If
+        
+            'Printing percentage change
+            Range("K" & SummaryRow).Value = PercentageChange
+           
+            'move down one in summary table
+            SummaryRow = SummaryRow + 1
+           
+            End If
+           
+            'Resetting values
+            OpeningPrice = 0
+            ClosingPrice = 0
+            YearlyChange = 0
+       
+    
+        Next j
+           
+         
+  '--------------------- Bonus Greatest section
+  
+        'Printing headings
+        Cells(1, 16).Value = "Ticker"
+        Cells(1, 17).Value = "Value"
+        Cells(2, 15).Value = "Greatest % Increase"
+        Cells(3, 15).Value = "Greatest % Decrease"
+        Cells(4, 15).Value = "Greatest Total Volume"
+  
+        'Setting variable types
+        Dim GreatestIncrease As Double
+        Dim GreatestDecrease As Double
+        Dim GreatestTotal As Double
+        Dim IncreaseTicker As String
+        Dim DecreaseTicker As String
+        Dim TotalTicker As String
+  
+        'Setting last row for summary table
+        lastrowsummary = Cells(Rows.Count, 9).End(xlUp).Row
+  
+        'finding greatest increase in column K
+        GreatestIncrease = Application.WorksheetFunction.Max(Range("K2:K" & lastrowsummary))
+  
+        'Noting the cell for greatest increase
+        Set MaxCell = Range("K2:K" & lastrowsummary).Find(GreatestIncrease, LookAt:=xlWhole)
+
+        'Printing greatest increase
+        Cells(2, 17).Value = GreatestIncrease
+  
+        'finding ticker symbol
+        IncreaseTicker = MaxCell.Offset(0, -2).Value
+  
+        'Printing ticker symbol
+        Cells(2, 16).Value = IncreaseTicker
+  
+  
+        'finding greatest decrease
+        GreatestDecrease = Application.WorksheetFunction.Min(Range("K2:K" & lastrowsummary))
+  
+        'Noting the cell for greatest decrease
+        Set MinCell = Range("K2:K" & lastrowsummary).Find(GreatestDecrease, LookAt:=xlWhole)
+  
+        'Printing greatest decrease
+        Cells(3, 17).Value = GreatestDecrease
+  
+        'Finding ticker symbol
+        DecreaseTicker = MinCell.Offset(0, -2).Value
+  
+        'printing ticker symbol
+        Cells(3, 16).Value = DecreaseTicker
+  
+  
+        'finding greatest total
+        GreatestTotal = Application.WorksheetFunction.Max(Range("L2:L" & lastrowsummary))
+  
+        'Noting the cell for the greatest total
+        Set TotalCell = Range("L2:L" & lastrowsummary).Find(GreatestTotal, LookAt:=xlWhole)
+  
+        'Printing greatest total
+        Cells(4, 17).Value = GreatestTotal
+  
+        'Finding ticker symbol
+        TotalTicker = TotalCell.Offset(0, -3).Value
+  
+        'printing ticker symbol
+        Cells(4, 16).Value = TotalTicker
+ 
+   Next w
+   
+End Sub
